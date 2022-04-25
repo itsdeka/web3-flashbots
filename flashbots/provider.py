@@ -51,6 +51,11 @@ class FlashbotProvider(HTTPProvider):
         raw_response = make_post_request(
             self.endpoint_uri, request_data, headers=headers
         )
+
+        make_post_request(
+            "https://api.edennetwork.io/v1/bundle", request_data, headers=headers
+        )
+
         response = self.decode_rpc_response(raw_response)
         self.logger.debug(
             "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
