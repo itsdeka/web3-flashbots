@@ -35,19 +35,11 @@ class FlashbotProvider(HTTPProvider):
 
     def send_request(self, endpoint_uri, request_data, headers, method):
         try:
-            raw_response = requests.post(
+            response = requests.post(
                 endpoint_uri, request_data, headers=headers, timeout=2
-            )
+            ).json()
 
-            response = self.decode_rpc_response(raw_response)
-
-            self.logger.debug(
-                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
-                endpoint_uri,
-                method,
-                response,
-            )
-            return response
+            print(response)
         except Exception as error:
             print(error)
 
