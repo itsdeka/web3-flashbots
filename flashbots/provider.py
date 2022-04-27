@@ -1,5 +1,6 @@
 import logging
 import os
+import requests
 from typing import Any, Union, Optional
 
 from eth_account import Account, messages
@@ -48,19 +49,39 @@ class FlashbotProvider(HTTPProvider):
             "X-Flashbots-Signature": f"{self.signature_account.address}:{signed_message.signature.hex()}"
         }
 
-        raw_response = make_post_request(
-            self.endpoint_uri, request_data, headers=headers
-        )
+        try:
+            raw_response = requests.post(
+                self.endpoint_uri, request_data, headers=headers, timeout=2
+            )
 
-        make_post_request(
-            "https://api.edennetwork.io/v1/bundle", request_data, headers=headers
-        )
+            response = self.decode_rpc_response(raw_response)
 
-        response = self.decode_rpc_response(raw_response)
-        self.logger.debug(
-            "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
-            self.endpoint_uri,
-            method,
-            response,
-        )
-        return response
+            self.logger.debug(
+                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
+                self.endpoint_uri,
+                method,
+                response,
+            )
+            return response
+        except Exception as error:
+            print(error)
+
+        try:
+            raw_response = requests.post(
+                "https://api.edennetwork.io/v1/bundle", request_data, headers=headers, timeout=2
+            )
+
+            response = self.decode_rpc_response(raw_response)
+
+            self.logger.debug(
+                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
+                self.endpoint_uri,
+                method,
+                response,
+            )
+            return response
+        except Exception as error:
+            print(error)
+
+
+
