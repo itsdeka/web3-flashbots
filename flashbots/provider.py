@@ -70,3 +70,5 @@ class FlashbotProvider(HTTPProvider):
 
         for thread in threads:
             thread.join()
+
+        return {'result': 'Ok'}
