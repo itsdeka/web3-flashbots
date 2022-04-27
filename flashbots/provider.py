@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+import threading
 from typing import Any, Union, Optional
 
 from eth_account import Account, messages
@@ -32,7 +33,25 @@ class FlashbotProvider(HTTPProvider):
         super().__init__(_endpoint_uri, request_kwargs, session)
         self.signature_account = signature_account
 
-    def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
+    def send_request(self, endpoint_uri, request_data, headers, method):
+        try:
+            raw_response = requests.post(
+                endpoint_uri, request_data, headers=headers, timeout=2
+            )
+
+            response = self.decode_rpc_response(raw_response)
+
+            self.logger.debug(
+                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
+                endpoint_uri,
+                method,
+                response,
+            )
+            return response
+        except Exception as error:
+            print(error)
+
+    def make_request(self, method: RPCEndpoint, params: Any):
         self.logger.debug(
             "Making request HTTP. URI: %s, Method: %s", self.endpoint_uri, method
         )
@@ -49,39 +68,13 @@ class FlashbotProvider(HTTPProvider):
             "X-Flashbots-Signature": f"{self.signature_account.address}:{signed_message.signature.hex()}"
         }
 
-        try:
-            raw_response = requests.post(
-                self.endpoint_uri, request_data, headers=headers, timeout=2
-            )
+        threads = []
 
-            response = self.decode_rpc_response(raw_response)
+        threads.append(threading.Thread(target=send_request, args=(self.endpoint_uri, request_data, headers, method)))
+        threads.append(threading.Thread(target=send_request, args=("https://api.edennetwork.io/v1/bundle", request_data, headers, method)))
 
-            self.logger.debug(
-                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
-                self.endpoint_uri,
-                method,
-                response,
-            )
-            return response
-        except Exception as error:
-            print(error)
+        for thread in threads:
+            thread.start()
 
-        try:
-            raw_response = requests.post(
-                "https://api.edennetwork.io/v1/bundle", request_data, headers=headers, timeout=2
-            )
-
-            response = self.decode_rpc_response(raw_response)
-
-            self.logger.debug(
-                "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
-                self.endpoint_uri,
-                method,
-                response,
-            )
-            return response
-        except Exception as error:
-            print(error)
-
-
-
+        for thread in threads:
+            thread.join()
