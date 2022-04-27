@@ -62,8 +62,8 @@ class FlashbotProvider(HTTPProvider):
 
         threads = []
 
-        threads.append(threading.Thread(target=send_request, args=(self.endpoint_uri, request_data, headers, method)))
-        threads.append(threading.Thread(target=send_request, args=("https://api.edennetwork.io/v1/bundle", request_data, headers, method)))
+        threads.append(threading.Thread(target=self.send_request, args=(self.endpoint_uri, request_data, headers, method)))
+        threads.append(threading.Thread(target=self.send_request, args=("https://api.edennetwork.io/v1/bundle", request_data, headers, method)))
 
         for thread in threads:
             thread.start()
